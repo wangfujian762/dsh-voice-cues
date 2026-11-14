@@ -42,7 +42,7 @@ Windows 走 `-EncodedCommand`（UTF-16LE base64）调用，路径里有空格、
 
 ## 配置
 
-默认三档全开，默认语音是 `personal-dongbei`（东北话小鲸鱼：小鲸鱼这轮工作整完了 / 请给小鲸鱼授权一下子 / 告诉小鲸鱼你要选哪个）；同包还带 `personal`（小鲸鱼普通话）、`dongbei`（通用东北话）、`default`（通用台词）。想切换、关掉某一档或换音频，在你自己 profile 的 `cordis.patch.yml` 里加一条同 id 覆盖（整体替换，只写要改的键）：
+默认三档全开，默认语音是 `personal-dongbei`（东北话小鲸鱼：小鲸鱼这轮整完了 / 请给小鲸鱼授权一下子 / 告诉小鲸鱼选哪个）；同包还带 `personal`（小鲸鱼普通话）、`dongbei`（通用东北话）、`default`（通用台词）。想切换、关掉某一档或换音频，在你自己 profile 的 `cordis.patch.yml` 里加一条同 id 覆盖（整体替换，只写要改的键）：
 
 ```yaml
 - id: voice-cues
