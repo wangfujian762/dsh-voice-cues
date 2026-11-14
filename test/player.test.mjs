@@ -13,6 +13,7 @@ import {
   createPlayer,
   cuePaths,
   DEFAULTS,
+  isSubagentSession,
   normalizeConfig,
   spawnSpecs,
 } from '../index.js'
@@ -192,6 +193,27 @@ test('subagent sessions are silent unless enabled', () => {
   const loud = handlerFor({ includeSubagents: true })
   loud.handler(subagent, { type: 'turn/end', data: { reason: { kind: 'completed' } } })
   assert.deepEqual(loud.player.played, ['done'])
+})
+
+test('a delegated session is recognised by origin or by depth', () => {
+  assert.equal(isSubagentSession({ header: { origin: 'subagent', delegationDepth: 1 } }), true)
+  assert.equal(isSubagentSession({ header: { delegationDepth: 2 } }), true)
+  assert.equal(isSubagentSession({ header: { origin: 'user', delegationDepth: 0 } }), false)
+  assert.equal(isSubagentSession({ header: {} }), false)
+  assert.equal(isSubagentSession(undefined), false)
+})
+
+test('a session that lost its origin still stays silent', () => {
+  const { player, handler } = handlerFor()
+  handler({ header: { delegationDepth: 1 } }, { type: 'turn/end', data: { reason: { kind: 'completed' } } })
+  handler({ header: { delegationDepth: 1 } }, { type: 'approval/asked', data: {} })
+  assert.deepEqual(player.played, [])
+})
+
+test('the top-level session still cues', () => {
+  const { player, handler } = handlerFor()
+  handler({ header: { delegationDepth: 0 } }, { type: 'turn/end', data: { reason: { kind: 'completed' } } })
+  assert.deepEqual(player.played, ['done'])
 })
 
 test('per-kind switches silence only their own cue', () => {

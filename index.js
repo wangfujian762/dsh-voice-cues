@@ -216,6 +216,19 @@ export function createPlayer({ platform = process.platform, spawnImpl = spawn, w
 }
 
 /**
+ * Whether a session is a delegated one. Subagents carry `origin: 'subagent'`;
+ * `delegationDepth` is checked as well so a header that lost `origin` (or a
+ * future spawn path that sets only the depth) still counts as delegated.
+ * @param {any} session - the session a `session/event` arrived for.
+ */
+export function isSubagentSession(session) {
+  const header = session?.header
+  if (header === null || typeof header !== 'object') return false
+  if (header.origin === 'subagent') return true
+  return typeof header.delegationDepth === 'number' && header.delegationDepth > 0
+}
+
+/**
  * Turn session events into cues. Pure routing: the player is injected, so the
  * tests exercise every branch without making a sound.
  * @param {object} options - wiring.
@@ -237,7 +250,7 @@ export function createHandler({ config, player, warn = () => {} }) {
   }
 
   return (session, event) => {
-    if (session?.header?.origin === 'subagent' && !config.includeSubagents) return
+    if (!config.includeSubagents && isSubagentSession(session)) return
     switch (event?.type) {
       case 'turn/end': {
         if (!config.onTurnEnd) return

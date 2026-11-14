@@ -4,6 +4,8 @@
 
 macOS / Windows / Linux 一个包搞定，不需要装额外播放器。
 
+只有**主会话**的回合结束才会播"任务完成"；子代理会话（`origin: subagent` 或 `delegationDepth > 0`）整类静音——完成、授权、提问都不出声。需要时可用 `includeSubagents: true` 打开。
+
 | 时机 | DSH 事件 | 提示音 |
 |---|---|---|
 | 一轮对话结束 | `turn/end`（默认只认 `completed`） | `done` |

@@ -10,7 +10,7 @@
 | 智能体请求授权 | `approval/asked` | `audio/permission` |
 | 智能体向你提问 | `tool/call`，工具名 `ask_user_question` | `audio/question` |
 
-子代理会话默认不响（它们结束得太频繁）；同类提示音有 600 ms 防连响。
+只有**主会话**的回合结束才播"任务完成"；子代理会话（`origin: subagent`、或 `delegationDepth > 0`）整类静音，完成/授权/提问都不出声。需要时用 `includeSubagents: true` 打开。同类提示音有 600 ms 防连响。
 
 ## 平台
 
