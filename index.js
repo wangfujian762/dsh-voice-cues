@@ -36,6 +36,8 @@ export const DEFAULTS = {
   volume: 1,
   /** Never repeat the same cue faster than this, in milliseconds. */
   minIntervalMs: 600,
+  /** Which shipped set to use: `default` (generic) or `personal` (小鲸鱼). */
+  variant: 'default',
   /** Per-cue file overrides (absolute path); empty means the shipped files. */
   audio: { done: '', approval: '', question: '' },
 }
@@ -64,6 +66,7 @@ export function normalizeConfig(raw) {
       ? config.turnEndReasons.filter(reason => typeof reason === 'string')
       : DEFAULTS.turnEndReasons,
     includeSubagents: config.includeSubagents === true,
+    variant: config.variant === 'personal' ? 'personal' : 'default',
     volume: typeof config.volume === 'number' && Number.isFinite(config.volume)
       ? Math.min(Math.max(config.volume, 0), 4)
       : DEFAULTS.volume,
@@ -87,7 +90,8 @@ export function normalizeConfig(raw) {
  */
 export function cuePaths(kind, config) {
   const override = config.audio[kind]
-  const stem = join(AUDIO_DIR, kind)
+  const base = config.variant === 'personal' ? join(AUDIO_DIR, 'personal') : AUDIO_DIR
+  const stem = join(base, kind)
   return {
     override,
     mp3: override.length > 0 ? override : `${stem}.mp3`,

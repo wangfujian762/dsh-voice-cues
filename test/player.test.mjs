@@ -53,6 +53,7 @@ test('defaults are on, quiet for subagents, and keep the shipped files', () => {
   assert.deepEqual(config.turnEndReasons, ['completed'])
   assert.equal(config.includeSubagents, false)
   assert.equal(config.volume, 1)
+  assert.equal(config.variant, 'default')
   assert.deepEqual(config.audio, { done: '', approval: '', question: '' })
   assert.equal(DEFAULTS.minIntervalMs, 600)
 })
@@ -79,6 +80,20 @@ test('cue files default to the package pair and honour an override', () => {
   const overridden = cuePaths('approval', normalizeConfig({ audio: { approval: '/custom/line.mp3' } }))
   assert.equal(overridden.mp3, '/custom/line.mp3')
   assert.equal(overridden.wav, '/custom/line.mp3')
+})
+
+test('the personal variant keeps its own folder and an override still wins', () => {
+  const personal = cuePaths('done', normalizeConfig({ variant: 'personal' }))
+  assert.match(personal.mp3, /audio[\\/]personal[\\/]done\.mp3$/)
+  assert.match(personal.wav, /audio[\\/]personal[\\/]done\.wav$/)
+
+  const overridden = cuePaths('done', normalizeConfig({ variant: 'personal', audio: { done: '/x.mp3' } }))
+  assert.equal(overridden.mp3, '/x.mp3')
+})
+
+test('an unknown variant falls back to the default set', () => {
+  const paths = cuePaths('done', normalizeConfig({ variant: 'nope' }))
+  assert.doesNotMatch(paths.mp3, /personal/)
 })
 
 test('macOS plays the MP3 through afplay at the configured gain', () => {

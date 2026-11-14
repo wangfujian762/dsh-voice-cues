@@ -41,11 +41,11 @@ dsh plugin --profile <你的 profile> add dsh-voice-cues
     volume: 0.8
 ```
 
-可用键：`enabled`、`onTurnEnd`、`onApproval`、`onQuestion`、`turnEndReasons`、`includeSubagents`、`volume`（0–4）、`minIntervalMs`、`audio.done` / `audio.approval` / `audio.question`（绝对路径）。
+可用键：`enabled`、`onTurnEnd`、`onApproval`、`onQuestion`、`turnEndReasons`、`includeSubagents`、`variant`（`default` 通用 / `personal` 小鲸鱼）、`volume`（0–4）、`minIntervalMs`、`audio.done` / `audio.approval` / `audio.question`（绝对路径）。
 
 ## 换台词 / 换音色
 
-覆盖 `audio/` 下的同名文件即可；macOS/Linux 读 `.mp3`，Windows 读 `.wav`，两者都要换。原素材是 Edge TTS 的 `zh-CN-XiaoxiaoNeural`（24 kHz / 48 kbps 单声道）。
+覆盖对应目录下的同名文件即可：通用版在 `audio/`，小鲸鱼版在 `audio/personal/`。macOS/Linux 读 `.mp3`，Windows 读 `.wav`，两者都要换。原素材是 Edge TTS 的 `zh-CN-XiaoxiaoNeural`（24 kHz / 48 kbps 单声道）。
 
 离线重做一条：
 
