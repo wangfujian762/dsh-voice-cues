@@ -74,7 +74,7 @@ Windows 走 `-EncodedCommand`（UTF-16LE base64）调用，路径里有空格、
 - macOS / Linux 读 `.mp3`，Windows 读 `.wav`，两处都要换
 - 也可以只改 `audio.*` 配置指向自己的文件（Windows 请给 WAV）
 
-原素材是 Edge TTS 的 `zh-CN-XiaoxiaoNeural`（24 kHz / 48 kbps 单声道）。离线重做：
+素材由豆包语音合成 2.0 生成（默认音色 `zh_female_vv_uranus_bigtts`，24 kHz / 64 kbps 单声道）；换成 Edge TTS 也可以，音色 `zh-CN-XiaoxiaoNeural`。离线重做：
 
 ```sh
 say -v Tingting "小鲸鱼任务完成" -o /tmp/done.aiff
