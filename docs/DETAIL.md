@@ -8,9 +8,9 @@
 
 | 时机 | DSH 事件 | 音频 |
 |---|---|---|
-| 一轮对话结束 | `turn/end`（默认只认 `completed`） | `audio/personal/done` |
-| 智能体请求授权 | `approval/asked` | `audio/personal/permission` |
-| 智能体向你提问 | `tool/call`，工具名 `ask_user_question` | `audio/personal/question` |
+| 一轮对话结束 | `turn/end`（默认只认 `completed`） | `audio/personal-dongbei/done` |
+| 智能体请求授权 | `approval/asked` | `audio/personal-dongbei/permission` |
+| 智能体向你提问 | `tool/call`，工具名 `ask_user_question` | `audio/personal-dongbei/question` |
 
 只有**主会话**的回合结束才播"任务完成"；子代理会话（`origin: subagent`、或 `delegationDepth > 0`）整类静音，完成/授权/提问都不出声。需要时用 `includeSubagents: true` 打开。同类提示音有 600 ms 防连响。
 
@@ -43,11 +43,11 @@ dsh plugin --profile <你的 profile> add dsh-voice-cues
     volume: 0.8
 ```
 
-可用键：`enabled`、`onTurnEnd`、`onApproval`、`onQuestion`、`turnEndReasons`、`includeSubagents`、`variant`（`personal` 小鲸鱼，默认 / `default` 通用）、`volume`（0–4）、`minIntervalMs`、`audio.done` / `audio.approval` / `audio.question`（绝对路径）。
+可用键：`enabled`、`onTurnEnd`、`onApproval`、`onQuestion`、`turnEndReasons`、`includeSubagents`、`variant`（`personal-dongbei` 东北话小鲸鱼，默认 / `personal` 小鲸鱼 / `dongbei` 通用东北话 / `default` 通用）、`volume`（0–4）、`minIntervalMs`、`audio.done` / `audio.approval` / `audio.question`（绝对路径）。
 
 ## 换台词 / 换音色
 
-覆盖对应目录下的同名文件即可：小鲸鱼版（默认）在 `audio/personal/`，通用版在 `audio/`。macOS/Linux 读 `.mp3`，Windows 读 `.wav`，两者都要换。素材由豆包语音合成 2.0 生成（默认音色 `zh_female_vv_uranus_bigtts`，24 kHz / 64 kbps 单声道）；换成 Edge TTS 也可以，音色 `zh-CN-XiaoxiaoNeural`。
+覆盖对应目录下的同名文件即可：东北话小鲸鱼（默认）在 `audio/personal-dongbei/`，小鲸鱼在 `audio/personal/`，通用东北话在 `audio/dongbei/`，通用在 `audio/`。macOS/Linux 读 `.mp3`，Windows 读 `.wav`，两者都要换。素材由豆包语音合成 2.0 生成（默认音色 `zh_female_vv_uranus_bigtts`，24 kHz / 64 kbps 单声道）；换成 Edge TTS 也可以，音色 `zh-CN-XiaoxiaoNeural`。
 
 离线重做一条：
 

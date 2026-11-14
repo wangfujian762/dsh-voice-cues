@@ -36,8 +36,8 @@ export const DEFAULTS = {
   volume: 1,
   /** Never repeat the same cue faster than this, in milliseconds. */
   minIntervalMs: 600,
-  /** Which shipped set to use: `personal` (小鲸鱼, this package's default) or `default` (generic). */
-  variant: 'personal',
+  /** Which shipped set to use: `personal-dongbei` (东北话小鲸鱼, default), `personal` (小鲸鱼), `dongbei` (generic 东北话) or `default` (generic). */
+  variant: 'personal-dongbei',
   /** Per-cue file overrides (absolute path); empty means the shipped files. */
   audio: { done: '', approval: '', question: '' },
 }
@@ -66,7 +66,7 @@ export function normalizeConfig(raw) {
       ? config.turnEndReasons.filter(reason => typeof reason === 'string')
       : DEFAULTS.turnEndReasons,
     includeSubagents: config.includeSubagents === true,
-    variant: config.variant === 'default' ? 'default' : 'personal',
+    variant: ['personal-dongbei', 'personal', 'dongbei', 'default'].includes(config.variant) ? config.variant : 'personal-dongbei',
     volume: typeof config.volume === 'number' && Number.isFinite(config.volume)
       ? Math.min(Math.max(config.volume, 0), 4)
       : DEFAULTS.volume,
@@ -90,7 +90,7 @@ export function normalizeConfig(raw) {
  */
 export function cuePaths(kind, config) {
   const override = config.audio[kind]
-  const base = config.variant === 'personal' ? join(AUDIO_DIR, 'personal') : AUDIO_DIR
+  const base = config.variant === 'default' ? AUDIO_DIR : join(AUDIO_DIR, config.variant)
   const stem = join(base, kind)
   return {
     override,

@@ -42,7 +42,7 @@ Windows 走 `-EncodedCommand`（UTF-16LE base64）调用，路径里有空格、
 
 ## 配置
 
-默认三档全开，默认语音是 `personal`（小鲸鱼版：小鲸鱼本轮工作完成啦 / 请给小鲸鱼点点授权哦 / 告诉小鲸鱼你的选择吧）；包内另带 `default`（通用台词）。想切换、关掉某一档或换音频，在你自己 profile 的 `cordis.patch.yml` 里加一条同 id 覆盖（整体替换，只写要改的键）：
+默认三档全开，默认语音是 `personal-dongbei`（东北话小鲸鱼：小鲸鱼这轮工作整完了 / 请给小鲸鱼授权一下子 / 告诉小鲸鱼你要选哪个）；同包还带 `personal`（小鲸鱼普通话）、`dongbei`（通用东北话）、`default`（通用台词）。想切换、关掉某一档或换音频，在你自己 profile 的 `cordis.patch.yml` 里加一条同 id 覆盖（整体替换，只写要改的键）：
 
 ```yaml
 - id: voice-cues
@@ -63,14 +63,14 @@ Windows 走 `-EncodedCommand`（UTF-16LE base64）调用，路径里有空格、
 | `includeSubagents` | `false` | 子代理会话是否也响 |
 | `volume` | `1` | 0–4，1 为原音量（Windows/Linux 映射到百分比） |
 | `minIntervalMs` | `600` | 同类提示音最小间隔 |
-| `variant` | `'personal'` | 随包语音：`personal` 小鲸鱼（默认）、`default` 通用 |
+| `variant` | `'personal-dongbei'` | `personal-dongbei` 东北话小鲸鱼（默认）、`personal` 小鲸鱼、`dongbei` 通用东北话、`default` 通用 |
 | `audio.done` / `audio.approval` / `audio.question` | `''` | 换成自己的音频，填绝对路径 |
 
 ## 换台词 / 换音色
 
 两套音频随包分发，直接覆盖对应目录下的同名文件即可（本地链接安装时立刻生效）。
 
-- 小鲸鱼版（默认）：`audio/personal/done.mp3` 等；通用版：`audio/done.mp3` 等
+- 东北话小鲸鱼（默认）：`audio/personal-dongbei/`；小鲸鱼：`audio/personal/`；通用东北话：`audio/dongbei/`；通用：`audio/`
 - macOS / Linux 读 `.mp3`，Windows 读 `.wav`，两处都要换
 - 也可以只改 `audio.*` 配置指向自己的文件（Windows 请给 WAV）
 
@@ -85,7 +85,7 @@ ffmpeg -y -i audio/done.mp3 -ar 24000 -ac 1 -c:a pcm_s16le audio/done.wav
 ## 开发
 
 ```sh
-npm test        # 24 个单元测试，不发声，macOS/Windows/Linux 通用
+npm test        # 31 个单元测试，不发声，macOS/Windows/Linux 通用
 npm run check   # 语法 + 测试
 ```
 
