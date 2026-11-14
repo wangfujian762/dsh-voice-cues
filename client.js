@@ -14,6 +14,8 @@ window.__ModuleLoader__.load({
       ['default', '普通话 · 通用'],
     ]
 
+    const PREVIEWS = [['done', '完成'], ['approval', '授权'], ['question', '选择']]
+
     const TOGGLES = [
       ['onTurnEnd', '本轮结束', '主会话这一轮跑完时响'],
       ['onApproval', '需要授权', '智能体请求授权时响'],
@@ -47,6 +49,12 @@ window.__ModuleLoader__.load({
       range: { width: 160 },
       value: { color: colors.secondary, fontSize: 12, minWidth: 42, textAlign: 'right' },
       error: { color: colors.error, fontSize: 12, margin: 0 },
+      buttons: { display: 'flex', gap: 6 },
+      button: {
+        padding: '4px 10px', borderRadius: 6, fontSize: 12, cursor: 'pointer',
+        color: colors.label, background: colors.bg, border: '1px solid ' + colors.border,
+      },
+      buttonBusy: { opacity: 0.65, cursor: 'progress' },
     }
 
     /** Subscribe to a config form and return its latest snapshot. */
@@ -77,12 +85,30 @@ window.__ModuleLoader__.load({
         })
       }
 
+      const variant = String(value.variant || 'personal-dongbei')
+      const volume = typeof value.volume === 'number' ? value.volume : 1
+
+      const [previewing, setPreviewing] = React.useState('')
       if (snap.status !== 'ready') {
         return h('div', { style: styles.root }, h('p', { style: styles.subtitle }, '正在读取设置…'))
       }
 
-      const variant = String(value.variant || 'personal-dongbei')
-      const volume = typeof value.volume === 'number' ? value.volume : 1
+      const preview = kind => {
+        if (previewing) return
+        setError('')
+        setPreviewing(kind)
+        fetch('/voice-cues/preview', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ variant, kind }),
+        }).then(response => {
+          if (!response.ok) throw new Error('HTTP ' + response.status)
+        }).catch(reason => {
+          setError('试听失败：' + String((reason && reason.message) || reason))
+        }).finally(() => {
+          setTimeout(() => setPreviewing(''), 600)
+        })
+      }
 
       return h('div', { style: styles.root },
         h('div', { style: styles.head },
@@ -95,6 +121,15 @@ window.__ModuleLoader__.load({
             disabled: !writable,
             onChange: event => write('variant', event.target.value),
           }, VARIANTS.map(([id, name]) => h('option', { key: id, value: id }, name)))),
+        h(Row, { label: '试听', hint: '用当前选择的风格播放' },
+          h('div', { style: styles.buttons }, PREVIEWS.map(([kind, label]) =>
+            h('button', {
+              key: kind,
+              type: 'button',
+              style: previewing === kind ? { ...styles.button, ...styles.buttonBusy } : styles.button,
+              disabled: previewing !== '',
+              onClick: () => preview(kind),
+            }, previewing === kind ? '播放中…' : label)))),
         TOGGLES.map(([key, label, hint]) => h(Row, { key, label, hint },
           h('input', {
             type: 'checkbox',

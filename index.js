@@ -139,10 +139,12 @@ export function normalizeConfig(raw) {
  * @param {CueConfig} config - normalized config.
  * @returns {{ mp3: string, wav: string, override: string }}
  */
+const CUE_FILES = { done: 'done', approval: 'permission', question: 'question' }
+
 export function cuePaths(kind, config) {
   const override = config.audio[kind]
   const base = config.variant === 'default' ? AUDIO_DIR : join(AUDIO_DIR, config.variant)
-  const stem = join(base, kind)
+  const stem = join(base, CUE_FILES[kind] ?? kind)
   return {
     override,
     mp3: override.length > 0 ? override : `${stem}.mp3`,
@@ -337,6 +339,75 @@ export function createHandler({ config, getConfig, player, warn = () => {} }) {
   }
 }
 
+/** Request bodies are tiny JSON objects; anything larger is refused. */
+function readBody(req, limit = 4096) {
+  return new Promise((resolve, reject) => {
+    let size = 0
+    const chunks = []
+    req.on('data', chunk => {
+      size += chunk.length
+      if (size > limit) {
+        reject(new Error('body too large'))
+        req.destroy()
+        return
+      }
+      chunks.push(chunk)
+    })
+    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
+    req.on('error', reject)
+  })
+}
+
+/**
+ * `POST /voice-cues/preview` — plays one cue for the settings card. Same-origin
+ * only: a request carrying an `Origin` header must match the page's host, so a
+ * random site cannot use the route to make noise.
+ * @param {object} options - wiring.
+ * @param {() => CueConfig} options.getConfig - current config reader.
+ * @param {ReturnType<typeof createPlayer>} options.player - cue speaker.
+ * @param {(message: string) => void} [options.warn] - diagnostic sink.
+ */
+export function createPreviewHandler({ getConfig, player, warn = () => {} }) {
+  return async (req, res) => {
+    const respond = (status, body) => {
+      res.statusCode = status
+      res.setHeader('Content-Type', 'application/json')
+      res.end(JSON.stringify(body))
+    }
+    if (req.method !== 'POST') return respond(405, { ok: false, error: 'method-not-allowed' })
+    const origin = req.headers?.origin
+    if (typeof origin === 'string' && origin.length > 0) {
+      let sameOrigin = false
+      try {
+        sameOrigin = new URL(origin).host === req.headers?.host
+      } catch {
+        sameOrigin = false
+      }
+      if (!sameOrigin) return respond(403, { ok: false, error: 'cross-origin' })
+    }
+
+    let payload
+    try {
+      payload = JSON.parse(await readBody(req))
+    } catch {
+      return respond(400, { ok: false, error: 'bad-json' })
+    }
+    const kind = payload?.kind
+    if (!['done', 'approval', 'question'].includes(kind)) {
+      return respond(400, { ok: false, error: 'bad-kind' })
+    }
+    const config = getConfig()
+    const variant = VARIANTS.includes(payload?.variant) ? payload.variant : config.variant
+    try {
+      player.play(kind, { ...config, variant }, cuePaths(kind, { ...config, variant }))
+    } catch (error) {
+      warn(`preview failed: ${error?.message ?? String(error)}`)
+      return respond(500, { ok: false, error: 'playback-failed' })
+    }
+    return respond(200, { ok: true, variant, kind })
+  }
+}
+
 /**
  * @param {import('@deepseek-ai/cordis').Context} ctx - host context.
  * @param {unknown} rawConfig - the loader row's config.
@@ -348,6 +419,17 @@ export function apply(ctx, rawConfig, overrides = {}) {
   // The subscription is always live: `enabled` is a volatile setting, so a
   // later toggle must take effect without a restart and is checked per event.
   const handler = createHandler({ getConfig: () => readConfig(rawConfig), player, warn })
+
+  ctx.inject(['webServer'], webCtx => {
+    webCtx.effect(
+      () => webCtx.webServer.register({
+        kind: 'exact',
+        path: '/voice-cues/preview',
+        handler: createPreviewHandler({ getConfig: () => readConfig(rawConfig), player, warn }),
+      }),
+      'dsh-voice-cues: preview route',
+    )
+  })
 
   ctx.effect(
     () => {

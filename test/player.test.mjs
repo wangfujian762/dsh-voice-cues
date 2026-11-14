@@ -10,6 +10,7 @@ import { test } from 'node:test'
 import {
   apply,
   Config,
+  createPreviewHandler,
   createHandler,
   createPlayer,
   cuePaths,
@@ -84,6 +85,13 @@ test('cue files default to the package pair and honour an override', () => {
   const overridden = cuePaths('approval', normalizeConfig({ audio: { approval: '/custom/line.mp3' } }))
   assert.equal(overridden.mp3, '/custom/line.mp3')
   assert.equal(overridden.wav, '/custom/line.mp3')
+})
+
+test('the approval cue reads permission.mp3, not approval.mp3', () => {
+  assert.match(cuePaths('approval', normalizeConfig()).mp3, /permission\.mp3$/)
+  assert.match(cuePaths('approval', normalizeConfig({ variant: 'personal-dongbei' })).wav, /personal-dongbei[\\/]permission\.wav$/)
+  assert.match(cuePaths('done', normalizeConfig()).mp3, /done\.mp3$/)
+  assert.match(cuePaths('question', normalizeConfig()).mp3, /question\.mp3$/)
 })
 
 test('the personal variant keeps its own folder and an override still wins', () => {
@@ -305,11 +313,63 @@ test('an unknown platform warns once', () => {
   assert.match(warnings[0], /no audio player/)
 })
 
+/** Minimal req/res doubles for the preview route. */
+function fakeRequest({ method = 'POST', headers = {}, body = '' }) {
+  const req = new EventEmitter()
+  req.method = method
+  req.headers = headers
+  process.nextTick(() => {
+    if (body) req.emit('data', Buffer.from(body))
+    req.emit('end')
+  })
+  return req
+}
+function fakeResponse() {
+  return {
+    statusCode: 0,
+    headers: {},
+    body: '',
+    setHeader(key, value) { this.headers[key] = value },
+    end(body) { this.body = body },
+  }
+}
+
+test('the preview route plays the requested cue and variant', async () => {
+  const played = []
+  const player = { play(kind, cfg) { played.push([kind, cfg.variant]) }, stop() {} }
+  const handler = createPreviewHandler({ getConfig: () => normalizeConfig({ variant: 'personal' }), player })
+  const res = fakeResponse()
+  await handler(fakeRequest({ body: JSON.stringify({ kind: 'approval', variant: 'dongbei' }) }), res)
+  assert.equal(res.statusCode, 200)
+  assert.deepEqual(played, [['approval', 'dongbei']])
+})
+
+test('the preview route refuses other methods, kinds and origins', async () => {
+  const player = { play() {}, stop() {} }
+  const handler = createPreviewHandler({ getConfig: () => normalizeConfig(), player })
+
+  const wrongMethod = fakeResponse()
+  await handler(fakeRequest({ method: 'GET' }), wrongMethod)
+  assert.equal(wrongMethod.statusCode, 405)
+
+  const wrongKind = fakeResponse()
+  await handler(fakeRequest({ body: JSON.stringify({ kind: 'launch' }) }), wrongKind)
+  assert.equal(wrongKind.statusCode, 400)
+
+  const crossOrigin = fakeResponse()
+  await handler(fakeRequest({
+    headers: { origin: 'http://evil.example', host: '127.0.0.1:62542' },
+    body: JSON.stringify({ kind: 'done' }),
+  }), crossOrigin)
+  assert.equal(crossOrigin.statusCode, 403)
+})
+
 test('apply subscribes to the session feed and stops the player on disposal', () => {
   const listeners = []
   let disposed = false
   const ctx = {
     logger: { warn() {} },
+    inject() {},
     effect(fn) {
       const off = fn()
       return off
@@ -329,6 +389,7 @@ test('a disabled plugin still subscribes, so the toggle works live', () => {
   const listeners = []
   const ctx = {
     logger: { warn() {} },
+    inject() {},
     effect(fn) { fn() },
     on(event, fn) { listeners.push({ event, fn }) },
   }
