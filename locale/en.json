@@ -1,0 +1,7 @@
+{
+  "meta": {
+    "title": "Voice cues",
+    "description": "Plays a short spoken cue when a turn finishes, an approval is requested, or the agent asks a question. macOS, Windows and Linux; the host process plays it, so a closed page does not silence it.",
+    "detail": "docs/DETAIL.md"
+  }
+}
