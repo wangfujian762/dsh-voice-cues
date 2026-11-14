@@ -36,8 +36,8 @@ export const DEFAULTS = {
   volume: 1,
   /** Never repeat the same cue faster than this, in milliseconds. */
   minIntervalMs: 600,
-  /** Which shipped set to use: `default` (generic) or `personal` (小鲸鱼). */
-  variant: 'default',
+  /** Which shipped set to use: `personal` (小鲸鱼, this package's default) or `default` (generic). */
+  variant: 'personal',
   /** Per-cue file overrides (absolute path); empty means the shipped files. */
   audio: { done: '', approval: '', question: '' },
 }
@@ -66,7 +66,7 @@ export function normalizeConfig(raw) {
       ? config.turnEndReasons.filter(reason => typeof reason === 'string')
       : DEFAULTS.turnEndReasons,
     includeSubagents: config.includeSubagents === true,
-    variant: config.variant === 'personal' ? 'personal' : 'default',
+    variant: config.variant === 'default' ? 'default' : 'personal',
     volume: typeof config.volume === 'number' && Number.isFinite(config.volume)
       ? Math.min(Math.max(config.volume, 0), 4)
       : DEFAULTS.volume,

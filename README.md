@@ -42,13 +42,13 @@ Windows 走 `-EncodedCommand`（UTF-16LE base64）调用，路径里有空格、
 
 ## 配置
 
-默认三档全开。包内带两套语音：`default`（通用：任务完成 / 需要你的授权 / 有问题需要你回答）和 `personal`（小鲸鱼版）。想切换、关掉某一档或换音频，在你自己 profile 的 `cordis.patch.yml` 里加一条同 id 覆盖（整体替换，只写要改的键）：
+默认三档全开，默认语音是 `personal`（小鲸鱼版：小鲸鱼任务完成 / 小鲸鱼需要你的授权 / 小鲸鱼有问题需要你回答）；包内另带 `default`（通用台词）。想切换、关掉某一档或换音频，在你自己 profile 的 `cordis.patch.yml` 里加一条同 id 覆盖（整体替换，只写要改的键）：
 
 ```yaml
 - id: voice-cues
   config:
     onQuestion: false
-    variant: 'personal'
+    variant: 'default'
     volume: 0.8
     turnEndReasons: ['completed', 'error']
 ```
@@ -63,14 +63,14 @@ Windows 走 `-EncodedCommand`（UTF-16LE base64）调用，路径里有空格、
 | `includeSubagents` | `false` | 子代理会话是否也响 |
 | `volume` | `1` | 0–4，1 为原音量（Windows/Linux 映射到百分比） |
 | `minIntervalMs` | `600` | 同类提示音最小间隔 |
-| `variant` | `'default'` | 随包语音：`default` 通用、`personal` 小鲸鱼 |
+| `variant` | `'personal'` | 随包语音：`personal` 小鲸鱼（默认）、`default` 通用 |
 | `audio.done` / `audio.approval` / `audio.question` | `''` | 换成自己的音频，填绝对路径 |
 
 ## 换台词 / 换音色
 
 两套音频随包分发，直接覆盖对应目录下的同名文件即可（本地链接安装时立刻生效）。
 
-- 通用版：`audio/done.mp3` 等；小鲸鱼版：`audio/personal/done.mp3` 等
+- 小鲸鱼版（默认）：`audio/personal/done.mp3` 等；通用版：`audio/done.mp3` 等
 - macOS / Linux 读 `.mp3`，Windows 读 `.wav`，两处都要换
 - 也可以只改 `audio.*` 配置指向自己的文件（Windows 请给 WAV）
 
