@@ -52,7 +52,7 @@ dsh plugin --profile <你的 profile> add dsh-voice-cues
 离线重做一条：
 
 ```sh
-say -v Tingting "小鲸鱼任务完成" -o /tmp/done.aiff
+say -v Tingting "小鲸鱼本轮工作完成啦" -o /tmp/done.aiff
 ffmpeg -y -i /tmp/done.aiff -codec:a libmp3lame -b:a 48k audio/done.mp3
 ffmpeg -y -i audio/done.mp3 -ar 24000 -ac 1 -c:a pcm_s16le audio/done.wav
 ```

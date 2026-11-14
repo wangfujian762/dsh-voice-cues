@@ -42,7 +42,7 @@ Windows 走 `-EncodedCommand`（UTF-16LE base64）调用，路径里有空格、
 
 ## 配置
 
-默认三档全开，默认语音是 `personal`（小鲸鱼版：小鲸鱼任务完成 / 小鲸鱼需要你的授权 / 小鲸鱼有问题需要你回答）；包内另带 `default`（通用台词）。想切换、关掉某一档或换音频，在你自己 profile 的 `cordis.patch.yml` 里加一条同 id 覆盖（整体替换，只写要改的键）：
+默认三档全开，默认语音是 `personal`（小鲸鱼版：小鲸鱼本轮工作完成啦 / 请给小鲸鱼授权一下哦 / 告诉小鲸鱼你的选择吧）；包内另带 `default`（通用台词）。想切换、关掉某一档或换音频，在你自己 profile 的 `cordis.patch.yml` 里加一条同 id 覆盖（整体替换，只写要改的键）：
 
 ```yaml
 - id: voice-cues
@@ -77,7 +77,7 @@ Windows 走 `-EncodedCommand`（UTF-16LE base64）调用，路径里有空格、
 素材由豆包语音合成 2.0 生成（默认音色 `zh_female_vv_uranus_bigtts`，24 kHz / 64 kbps 单声道）；换成 Edge TTS 也可以，音色 `zh-CN-XiaoxiaoNeural`。离线重做：
 
 ```sh
-say -v Tingting "小鲸鱼任务完成" -o /tmp/done.aiff
+say -v Tingting "小鲸鱼本轮工作完成啦" -o /tmp/done.aiff
 ffmpeg -y -i /tmp/done.aiff -codec:a libmp3lame -b:a 48k audio/done.mp3
 ffmpeg -y -i audio/done.mp3 -ar 24000 -ac 1 -c:a pcm_s16le audio/done.wav
 ```
