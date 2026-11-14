@@ -66,6 +66,16 @@ Windows 走 `-EncodedCommand`（UTF-16LE base64）调用，路径里有空格、
 | `variant` | `'personal-dongbei'` | `personal-dongbei` 东北话小鲸鱼（默认）、`personal` 小鲸鱼、`dongbei` 通用东北话、`default` 通用 |
 | `audio.done` / `audio.approval` / `audio.question` | `''` | 换成自己的音频，填绝对路径 |
 
+## 可视化设置
+
+重启 DSH 后打开 **设置 → 通用**，最下方有一张「语音提示音」卡片：
+
+- **语音风格**：四套录音下拉选择（东北话小鲸鱼 / 小鲸鱼 / 通用东北话 / 通用）
+- **本轮结束 / 需要授权 / 需要选择 / 子代理也响**：四个开关
+- **音量**：0–200% 滑杆
+
+改动**立即生效**，不用重启；写入保存在 profile 里。想用命令行或 `cordis.patch.yml` 覆盖也可以，两处改的是同一份配置。
+
 ## 换台词 / 换音色
 
 两套音频随包分发，直接覆盖对应目录下的同名文件即可（本地链接安装时立刻生效）。

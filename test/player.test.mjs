@@ -9,13 +9,16 @@ import { test } from 'node:test'
 
 import {
   apply,
+  Config,
   createHandler,
   createPlayer,
   cuePaths,
   DEFAULTS,
   isSubagentSession,
   normalizeConfig,
+  readConfig,
   spawnSpecs,
+  unwrap,
 } from '../index.js'
 
 const MP3 = '/tmp/cues/done.mp3'
@@ -322,7 +325,7 @@ test('apply subscribes to the session feed and stops the player on disposal', ()
   assert.equal(disposed, false)
 })
 
-test('a disabled plugin subscribes to nothing', () => {
+test('a disabled plugin still subscribes, so the toggle works live', () => {
   const listeners = []
   const ctx = {
     logger: { warn() {} },
@@ -330,5 +333,43 @@ test('a disabled plugin subscribes to nothing', () => {
     on(event, fn) { listeners.push({ event, fn }) },
   }
   apply(ctx, { enabled: false })
-  assert.deepEqual(listeners, [])
+  assert.equal(listeners.length, 1)
+  assert.equal(listeners[0].event, 'session/event')
+})
+
+test('readConfig unwraps volatile settings and keeps plain ones', () => {
+  const live = {
+    variant: { get: () => 'dongbei' },
+    volume: { get: () => 0.5 },
+    onQuestion: { get: () => false },
+    turnEndReasons: ['completed', 'error'],
+  }
+  const config = readConfig(live)
+  assert.equal(config.variant, 'dongbei')
+  assert.equal(config.volume, 0.5)
+  assert.equal(config.onQuestion, false)
+  assert.deepEqual(config.turnEndReasons, ['completed', 'error'])
+  assert.equal(config.onTurnEnd, true)
+})
+
+test('the Config schema exposes the settings card fields', () => {
+  assert.ok(Config)
+  const sample = Config({})
+  assert.equal(unwrap(sample.variant), DEFAULTS.variant)
+  assert.equal(unwrap(sample.volume), DEFAULTS.volume)
+})
+
+test('a handler with a live getter picks up a changed variant', () => {
+  const played = []
+  let variant = 'personal-dongbei'
+  const config = normalizeConfig()
+  const player = { play(kind, cfg) { played.push(cfg.variant) }, stop() {} }
+  const handler = createHandler({
+    getConfig: () => ({ ...config, variant }),
+    player,
+  })
+  handler(session, { type: 'turn/end', data: { reason: { kind: 'completed' } } })
+  variant = 'dongbei'
+  handler(session, { type: 'approval/asked', data: {} })
+  assert.deepEqual(played, ['personal-dongbei', 'dongbei'])
 })

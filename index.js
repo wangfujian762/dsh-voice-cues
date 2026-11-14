@@ -14,6 +14,7 @@ import { spawn } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import z from '@deepseek-ai/schemastery'
 
 export const name = 'dsh-voice-cues'
 
@@ -45,6 +46,56 @@ export const DEFAULTS = {
 /** @typedef {'done' | 'approval' | 'question'} CueKind */
 
 /** @typedef {ReturnType<typeof normalizeConfig>} CueConfig */
+
+/** Which voice sets this package ships, in the order the settings card lists them. */
+export const VARIANTS = ['personal-dongbei', 'personal', 'dongbei', 'default']
+
+/**
+ * Live-editable settings. The `.volatile()` fields are what the Plugins page
+ * form can change without restarting the plugin; the rest stay in the profile
+ * patch. Volatile values arrive as `Volatile<T>` wrappers and are read through
+ * `unwrap` at the moment a cue plays, so a change applies to the next cue.
+ */
+export const Config = z.object({
+  enabled: z.boolean().default(DEFAULTS.enabled).volatile(),
+  variant: z.union(VARIANTS).default(DEFAULTS.variant).volatile(),
+  onTurnEnd: z.boolean().default(DEFAULTS.onTurnEnd).volatile(),
+  onApproval: z.boolean().default(DEFAULTS.onApproval).volatile(),
+  onQuestion: z.boolean().default(DEFAULTS.onQuestion).volatile(),
+  includeSubagents: z.boolean().default(DEFAULTS.includeSubagents).volatile(),
+  volume: z.number().min(0).max(4).step(0.05).default(DEFAULTS.volume).volatile(),
+  minIntervalMs: z.number().min(0).default(DEFAULTS.minIntervalMs).volatile(),
+  turnEndReasons: z.array(z.string()).default(DEFAULTS.turnEndReasons),
+  audio: z.object({
+    done: z.string().default(''),
+    approval: z.string().default(''),
+    question: z.string().default(''),
+  }).default(DEFAULTS.audio),
+})
+
+const VOLATILE_KEYS = ['enabled', 'variant', 'onTurnEnd', 'onApproval', 'onQuestion', 'includeSubagents', 'volume', 'minIntervalMs']
+
+/** Read a value that may be a schemastery `Volatile` wrapper. */
+export function unwrap(value) {
+  return value !== null && typeof value === 'object' && typeof value.get === 'function' ? value.get() : value
+}
+
+/**
+ * A plain, normalized view of the row config at this instant: volatile fields
+ * are unwrapped, everything else passes through, defaults fill the gaps.
+ * @param {unknown} raw - the loader row config, possibly holding Volatile wrappers.
+ */
+export function readConfig(raw) {
+  const plain = {}
+  if (raw !== null && typeof raw === 'object') {
+    for (const key of VOLATILE_KEYS) {
+      if (raw[key] !== undefined) plain[key] = unwrap(raw[key])
+    }
+    if (raw.turnEndReasons !== undefined) plain.turnEndReasons = raw.turnEndReasons
+    if (raw.audio !== undefined) plain.audio = raw.audio
+  }
+  return normalizeConfig(plain)
+}
 
 /**
  * Merge a loader row's config onto the defaults. A profile override replaces
@@ -236,13 +287,15 @@ export function isSubagentSession(session) {
  * @param {ReturnType<typeof createPlayer>} options.player - cue speaker.
  * @param {(message: string) => void} [options.warn] - diagnostic sink.
  */
-export function createHandler({ config, player, warn = () => {} }) {
+export function createHandler({ config, getConfig, player, warn = () => {} }) {
+  /** Config can be static (tests) or re-read per event (live settings). */
+  const current = () => (getConfig ? getConfig() : config)
   /** @type {Map<CueKind, number>} */
   const lastPlayedAt = new Map()
   /** callIds already sounded, so `tool/call` and PTC dispatch cue once. */
   const seenQuestions = new Set()
 
-  const play = kind => {
+  const play = (kind, config) => {
     const now = Date.now()
     if (now - (lastPlayedAt.get(kind) ?? 0) < config.minIntervalMs) return
     lastPlayedAt.set(kind, now)
@@ -250,18 +303,20 @@ export function createHandler({ config, player, warn = () => {} }) {
   }
 
   return (session, event) => {
+    const config = current()
+    if (!config.enabled) return
     if (!config.includeSubagents && isSubagentSession(session)) return
     switch (event?.type) {
       case 'turn/end': {
         if (!config.onTurnEnd) return
         const reason = typeof event.data?.reason === 'string' ? event.data.reason : event.data?.reason?.kind
         if (typeof reason === 'string' && !config.turnEndReasons.includes(reason)) return
-        play('done')
+        play('done', config)
         return
       }
       case 'approval/asked': {
         if (!config.onApproval) return
-        play('approval')
+        play('approval', config)
         return
       }
       case 'tool/call':
@@ -273,7 +328,7 @@ export function createHandler({ config, player, warn = () => {} }) {
           seenQuestions.add(callId)
           if (seenQuestions.size > 500) seenQuestions.clear()
         }
-        play('question')
+        play('question', config)
         return
       }
       default:
@@ -288,12 +343,11 @@ export function createHandler({ config, player, warn = () => {} }) {
  * @param {object} [overrides] - injection points for tests.
  */
 export function apply(ctx, rawConfig, overrides = {}) {
-  const config = normalizeConfig(rawConfig)
-  if (!config.enabled) return
-
   const warn = message => ctx.logger?.warn?.(`dsh-voice-cues: ${message}`)
   const player = createPlayer({ warn, ...overrides.player })
-  const handler = createHandler({ config, player, warn })
+  // The subscription is always live: `enabled` is a volatile setting, so a
+  // later toggle must take effect without a restart and is checked per event.
+  const handler = createHandler({ getConfig: () => readConfig(rawConfig), player, warn })
 
   ctx.effect(
     () => {

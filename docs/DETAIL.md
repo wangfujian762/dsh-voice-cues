@@ -45,6 +45,10 @@ dsh plugin --profile <你的 profile> add dsh-voice-cues
 
 可用键：`enabled`、`onTurnEnd`、`onApproval`、`onQuestion`、`turnEndReasons`、`includeSubagents`、`variant`（`personal-dongbei` 东北话小鲸鱼，默认 / `personal` 小鲸鱼 / `dongbei` 通用东北话 / `default` 通用）、`volume`（0–4）、`minIntervalMs`、`audio.done` / `audio.approval` / `audio.question`（绝对路径）。
 
+## 可视化设置
+
+重启后打开 **设置 → 通用**，最下方是「语音提示音」卡片：语音风格下拉、四个开关（本轮结束 / 需要授权 / 需要选择 / 子代理也响）、音量滑杆。改动立即生效，写入保存在 profile；也可以用 `cordis.patch.yml` 覆盖，两者改的是同一份配置。
+
 ## 换台词 / 换音色
 
 覆盖对应目录下的同名文件即可：东北话小鲸鱼（默认）在 `audio/personal-dongbei/`，小鲸鱼在 `audio/personal/`，通用东北话在 `audio/dongbei/`，通用在 `audio/`。macOS/Linux 读 `.mp3`，Windows 读 `.wav`，两者都要换。素材由豆包语音合成 2.0 生成（默认音色 `zh_female_vv_uranus_bigtts`，24 kHz / 64 kbps 单声道）；换成 Edge TTS 也可以，音色 `zh-CN-XiaoxiaoNeural`。
